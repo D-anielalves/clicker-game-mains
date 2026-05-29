@@ -95,7 +95,7 @@ void salvarJogo(Jogo *jogo, Slot slots[]) {
     fprintf(arquivo, "%d\n", jogo->opcaoCompra);
 
     for (int i = 0; i < NUM_SLOTS; i++) {
-        fprintf(arquivo, "%d\n", slots[i].nivel);
+        fprintf(arquivo, "%d %d %d\n", slots[i].nivel, slots[i].up.custo, slots[i].up.bonus);
     }
 
     fclose(arquivo);
@@ -124,7 +124,7 @@ void carregarJogo(Jogo *jogo, Slot slots[]) {
     fscanf(arquivo, "%d", (int*)&jogo->opcaoCompra);
 
     for (int i = 0; i < NUM_SLOTS; i++) {
-        fscanf(arquivo, "%d", &slots[i].nivel);
+        fscanf(arquivo, "%d %d %d", &slots[i].nivel, &slots[i].up.custo, &slots[i].up.bonus);
     }
 
     fclose(arquivo);
