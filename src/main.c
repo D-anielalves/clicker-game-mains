@@ -242,7 +242,7 @@ void desenhar(Jogo *jogo,
         base_pc_y,
         ALLEGRO_ALIGN_CENTER,
         "Pontos: %d",
-        jogo->pontos
+        jogo->pontoxs
     );
 
     al_draw_textf(
@@ -400,6 +400,7 @@ void tratarClique(Jogo *jogo,
             jogo->opcaoCompra = MULT_1X;
     }
 }
+    // COLOCAR IMAGENS NOS SLOTS
     void atribuirImagens(Slot slots[],
                         ALLEGRO_BITMAP *cpu_img,
                         ALLEGRO_BITMAP *gpu_img,
