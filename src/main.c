@@ -95,7 +95,7 @@ void salvarJogo(Jogo *jogo, Slot slots[]) {
     fprintf(arquivo, "%d\n", jogo->opcaoCompra);
 
     for (int i = 0; i < NUM_SLOTS; i++) {
-        fprintf(arquivo, "%d %d %d\n", slots[i].nivel, slots[i].up.custo, slots[i].up.bonus);
+        fprintf(arquivo, "%d\n", slots[i].nivel);
     }
 
     fclose(arquivo);
@@ -124,12 +124,29 @@ void carregarJogo(Jogo *jogo, Slot slots[]) {
     fscanf(arquivo, "%d", (int*)&jogo->opcaoCompra);
 
     for (int i = 0; i < NUM_SLOTS; i++) {
-        fscanf(arquivo, "%d %d %d", &slots[i].nivel, &slots[i].up.custo, &slots[i].up.bonus);
+        fscanf(arquivo, "%d", &slots[i].nivel);
     }
 
     fclose(arquivo);
 
     printf("Save carregado!\n");
+}
+
+// =====================
+// RECURSIVIDADE
+// CALCULAR CUSTO
+// =====================
+int calcularCustoRecursivo(int custoBase, int nivel) {
+
+    // CASO BASE
+    if (nivel == 0)
+        return custoBase;
+
+    // CHAMADA RECURSIVA
+    return calcularCustoRecursivo(
+        custoBase,
+        nivel - 1
+    ) * 1.6;
 }
 
 // =====================
@@ -142,8 +159,19 @@ void ordenarUpgrades(Slot slots[]) {
 
         for (int j = 0; j < NUM_SLOTS - 1 - i; j++) {
 
-            if (slots[j].up.custo >
-                slots[j + 1].up.custo) {
+            int custoAtual =
+                calcularCustoRecursivo(
+                    slots[j].up.custo,
+                    slots[j].nivel
+                );
+
+            int proximoCusto =
+                calcularCustoRecursivo(
+                    slots[j + 1].up.custo,
+                    slots[j + 1].nivel
+                );
+
+            if (custoAtual > proximoCusto) {
 
                 Slot temp = slots[j];
 
@@ -242,7 +270,7 @@ void desenhar(Jogo *jogo,
         base_pc_y,
         ALLEGRO_ALIGN_CENTER,
         "Pontos: %d",
-        jogo->pontoxs
+        jogo->pontos
     );
 
     al_draw_textf(
@@ -276,13 +304,15 @@ void desenhar(Jogo *jogo,
 
         int by = start_y + (i * (BOTAO_H + ESPACAMENTO));
 
-        int custoTotal = slots[i].up.custo * mult;
+        int custoAtual =
+            calcularCustoRecursivo(
+                slots[i].up.custo,
+                slots[i].nivel
+            );
+
+        int custoTotal = custoAtual * mult;
 
         // IMAGEM
-        if (!slots[i].img) {
-            printf("IMG NULL no slot %d\n", i);
-            continue;
-        }
         al_draw_scaled_bitmap(
             slots[i].img,
             0, 0,
@@ -293,6 +323,16 @@ void desenhar(Jogo *jogo,
             BOTAO_W,
             BOTAO_H,
             0
+        );
+
+        // BORDA
+        al_draw_rectangle(
+            painel_x,
+            by,
+            painel_x + BOTAO_W,
+            by + BOTAO_H,
+            al_map_rgb(255,255,255),
+            1
         );
 
         // TEXTO
@@ -363,21 +403,24 @@ void tratarClique(Jogo *jogo,
 
             for (int j = 0; j < mult; j++) {
 
-                if (jogo->pontos >= slots[i].up.custo) {
+    int custoAtual =
+        calcularCustoRecursivo(
+            slots[i].up.custo,
+            slots[i].nivel
+        );
 
-                    jogo->pontos -= slots[i].up.custo;
+    if (jogo->pontos >= custoAtual) {
 
-                    jogo->pontosPorClique +=
-                        slots[i].up.bonus;
+        jogo->pontos -= custoAtual;
 
-                    slots[i].nivel++;
+        jogo->pontosPorClique +=
+            slots[i].up.bonus;
 
-                    slots[i].up.custo =
-                         (int)(slots[i].up.custo * 1.6);
+        slots[i].nivel++;
 
-                    ordenarUpgrades(slots);    
-                }
-            }
+        ordenarUpgrades(slots);
+    }
+}
 
             return;
         }
@@ -400,15 +443,18 @@ void tratarClique(Jogo *jogo,
             jogo->opcaoCompra = MULT_1X;
     }
 }
-    // COLOCAR IMAGENS NOS SLOTS
-    void atribuirImagens(Slot slots[],
-                        ALLEGRO_BITMAP *cpu_img,
-                        ALLEGRO_BITMAP *gpu_img,
-                        ALLEGRO_BITMAP *ram_img) {
-        slots[0].img = cpu_img;
-        slots[1].img = gpu_img;
-        slots[2].img = ram_img;
-    }
+
+void atribuirImagens(Slot slots[],
+                     ALLEGRO_BITMAP *cpu_img,
+                     ALLEGRO_BITMAP *gpu_img,
+                     ALLEGRO_BITMAP *ram_img) {
+
+    slots[0].img = cpu_img;
+    slots[1].img = gpu_img;
+    slots[2].img = ram_img;
+    
+}                    
+                     
 
 // =====================
 // MAIN
@@ -439,30 +485,38 @@ int main() {
 
     Slot slots[NUM_SLOTS];
 
-    // =========================
-    // 1. INICIALIZA SLOTS (SEM IMG)
-    // =========================
+    // CPU
     strcpy(slots[0].up.nome, "CPU");
     slots[0].up.custo = 10;
     slots[0].up.bonus = 1;
     slots[0].nivel = 0;
     slots[0].img = NULL;
 
+    // GPU
     strcpy(slots[1].up.nome, "GPU");
     slots[1].up.custo = 50;
     slots[1].up.bonus = 5;
     slots[1].nivel = 0;
     slots[1].img = NULL;
 
+    // RAM
     strcpy(slots[2].up.nome, "RAM");
     slots[2].up.custo = 100;
     slots[2].up.bonus = 10;
     slots[2].nivel = 0;
     slots[2].img = NULL;
 
-    // =========================
-    // 2. INIT ALLEGRO
-    // =========================
+    // LOAD SAVE
+    carregarJogo(jogo, slots);
+
+    // MATRIZ
+    int multiplicador[3][1] = {
+        {1},
+        {5},
+        {10}
+    };
+
+    // ALLEGRO
     if (!al_init())
         return -1;
 
@@ -473,9 +527,36 @@ int main() {
     al_init_font_addon();
     al_init_ttf_addon();
 
-    // =========================
-    // 3. CARREGA IMAGENS
-    // =========================
+    timerSave = al_create_timer(10.0);
+
+if (!timerSave) {
+    printf("Erro timer save\n");
+    return -1;
+    }
+    
+    display = al_create_display(
+        jogo->larguraTela,
+        jogo->alturaTela
+    );
+
+    if (!display) {
+        printf("Erro display\n");
+        return -1;
+    }
+
+    // FONT
+    font = al_load_ttf_font(
+        "../assets/fonts/ari-w9500.ttf",
+        20,
+        0
+    );
+
+    if (!font) {
+        printf("Erro fonte\n");
+        return -1;
+    }
+
+    // IMAGENS
     pc = al_load_bitmap("../assets/images/pc.png");
     menu = al_load_bitmap("../assets/images/menu.png");
 
@@ -483,54 +564,59 @@ int main() {
     gpu_img = al_load_bitmap("../assets/images/upgrade_GPU.png");
     ram_img = al_load_bitmap("../assets/images/upgrade_RAM.png");
 
-    if (!pc || !menu || !cpu_img || !gpu_img || !ram_img) {
-        printf("ERRO: imagens nao carregaram\n");
+    atribuirImagens(
+    slots,
+    cpu_img,
+    gpu_img,
+    ram_img
+);
+
+    if (!pc || !menu ||
+        !cpu_img || !gpu_img || !ram_img) {
+
+        printf("Erro imagens\n");
         return -1;
     }
 
-    // =========================
-    // 4. ATRIBUI IMAGENS (ANTES E DEPOIS DO LOAD)
-    // =========================
-    atribuirImagens(slots, cpu_img, gpu_img, ram_img);
-
-    carregarJogo(jogo, slots);
-
-    atribuirImagens(slots, cpu_img, gpu_img, ram_img);
-
-    // =========================
-    // 5. TAMANHO PC
-    // =========================
+    // TAMANHO PC
     int largura_original = al_get_bitmap_width(pc);
     int altura_original = al_get_bitmap_height(pc);
 
     jogo->img_w = 780;
-    jogo->img_h = (altura_original * jogo->img_w) / largura_original;
 
-    jogo->img_x = (jogo->larguraTela / 2) - (jogo->img_w / 2);
+    jogo->img_h =
+        (altura_original * jogo->img_w)
+        / largura_original;
+
+    jogo->img_x =
+        (jogo->larguraTela / 2)
+        - (jogo->img_w / 2);
+
     jogo->img_y = 40;
 
-    // =========================
-    // 6. EVENTOS
-    // =========================
-    timerSave = al_create_timer(10.0);
-
-    display = al_create_display(jogo->larguraTela, jogo->alturaTela);
-
-    font = al_load_ttf_font("../assets/fonts/ari-w9500.ttf", 20, 0);
-
+    // EVENTOS
     queue = al_create_event_queue();
 
-    al_register_event_source(queue, al_get_mouse_event_source());
-    al_register_event_source(queue, al_get_display_event_source(display));
-    al_register_event_source(queue, al_get_timer_event_source(timerSave));
+    al_register_event_source(
+        queue,
+        al_get_mouse_event_source()
+    );
+
+    al_register_event_source(
+        queue,
+        al_get_display_event_source(display)
+    );
+
+    al_register_event_source(
+    queue,
+    al_get_timer_event_source(timerSave)
+    );
 
     al_start_timer(timerSave);
 
     bool rodando = true;
 
-    // =========================
     // LOOP
-    // =========================
     while (rodando) {
 
         desenhar(
@@ -542,7 +628,7 @@ int main() {
             ram_img,
             font,
             slots,
-            (int[3][1]){{1},{5},{10}},
+            multiplicador,
             largura_original,
             altura_original
         );
@@ -550,24 +636,32 @@ int main() {
         al_wait_for_event(queue, &event);
 
         if (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
+
             salvarJogo(jogo, slots);
+
             rodando = false;
         }
 
         if (event.type == ALLEGRO_EVENT_TIMER) {
+
             salvarJogo(jogo, slots);
+
             printf("Auto save!\n");
-        }
+}
 
         if (event.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) {
-            tratarClique(jogo, slots, (int[3][1]){{1},{5},{10}},
-                         event.mouse.x, event.mouse.y);
+
+            tratarClique(
+                jogo,
+                slots,
+                multiplicador,
+                event.mouse.x,
+                event.mouse.y
+            );
         }
     }
 
-    // =========================
     // LIMPEZA
-    // =========================
     al_destroy_bitmap(pc);
     al_destroy_bitmap(menu);
 
@@ -576,6 +670,7 @@ int main() {
     al_destroy_bitmap(ram_img);
 
     al_destroy_font(font);
+
     al_destroy_event_queue(queue);
     al_destroy_timer(timerSave);
     al_destroy_display(display);
