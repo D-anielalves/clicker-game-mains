@@ -325,16 +325,6 @@ void desenhar(Jogo *jogo,
             0
         );
 
-        // BORDA
-        al_draw_rectangle(
-            painel_x,
-            by,
-            painel_x + BOTAO_W,
-            by + BOTAO_H,
-            al_map_rgb(255,255,255),
-            1
-        );
-
         // TEXTO
         al_draw_textf(
             font,
