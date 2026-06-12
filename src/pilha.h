@@ -5,9 +5,6 @@
 
 void inicializarPilha(Pilha *pilha);
 
-void pushCompra(
-    Pilha *pilha,
-    char nome[]
-);
+void pushCompra(Pilha *pilha,char nome[]);
 
 #endif
