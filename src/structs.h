@@ -67,5 +67,27 @@ typedef struct {
     Compra itens[100];
     int topo;
 } Pilha;
+//========================
+// MENU
+//========================
+typedef enum {
+    MENU_JOGAR,
+    MENU_CONQUISTAS,
+    MENU_SAIR,
+    MENU_NENHUM
+} OpcaoMenu;
+
+typedef struct {
+    float x, y;
+    float largura, altura;
+    ALLEGRO_BITMAP *imagem;
+    OpcaoMenu acao;
+} Botao;
+
+typedef enum {
+    ESTADO_MENU,
+    ESTADO_JOGO,
+    ESTADO_CONQUISTAS
+} EstadoJogo;
 
 #endif

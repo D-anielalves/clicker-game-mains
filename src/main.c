@@ -16,6 +16,7 @@
 #include "upgrades.h"
 #include "clique.h"
 #include "render.h"
+#include "menu.h"
 
 #define NUM_SLOTS 3
 #define BOTAO_W 350
@@ -27,12 +28,13 @@
 // MAIN
 // =====================
 int main() {
-
+    EstadoJogo estado = ESTADO_MENU;
     ALLEGRO_DISPLAY *display = NULL;
     ALLEGRO_EVENT_QUEUE *queue = NULL;
     ALLEGRO_EVENT event;
 
     ALLEGRO_TIMER *timerSave = NULL;
+    ALLEGRO_TIMER *timerRender = NULL;
 
     ALLEGRO_BITMAP *pc = NULL;
     ALLEGRO_BITMAP *menu = NULL;
@@ -92,7 +94,7 @@ int main() {
         return -1;
 
     al_install_mouse();
-
+    al_install_keyboard();
     al_init_image_addon();
     al_init_primitives_addon();
     al_init_font_addon();
@@ -104,7 +106,12 @@ if (!timerSave) {
     printf("Erro timer save\n");
     return -1;
     }
-    
+    timerRender = al_create_timer(1.0 / 60.0);
+
+if (!timerRender) {
+    printf("Erro timer render\n");
+    return -1;
+}
     display = al_create_display(
         jogo->larguraTela,
         jogo->alturaTela
@@ -134,6 +141,47 @@ if (!timerSave) {
     cpu_img = al_load_bitmap("../assets/images/upgrade_CPU.png");
     gpu_img = al_load_bitmap("../assets/images/upgrade_GPU.png");
     ram_img = al_load_bitmap("../assets/images/upgrade_RAM.png");
+    ALLEGRO_BITMAP *bg_menu = al_load_bitmap("../assets/images/menu_inicial.png");
+
+    // BOTÕES DO MENU
+
+
+    Botao botoesMenu[3];
+
+    ALLEGRO_BITMAP *btn_jogar = al_load_bitmap("../assets/images/jogar.png");
+    ALLEGRO_BITMAP *btn_conquistas = al_load_bitmap("../assets/images/conquistas.png");
+    ALLEGRO_BITMAP *btn_sair = al_load_bitmap("../assets/images/sair.png");
+
+    // centralizar
+    float escala = 0.6;
+    int larguraBotao = al_get_bitmap_width(btn_jogar)*escala;
+    int centroX = jogo->larguraTela / 2 - (larguraBotao / 2);
+    int yBase = 370;
+    int espacamento = 80;
+
+        botoesMenu[0] = (Botao){
+        centroX, yBase,
+        al_get_bitmap_width(btn_jogar)* escala,
+        al_get_bitmap_height(btn_jogar)* escala,
+        btn_jogar,
+        MENU_JOGAR
+    };
+
+        botoesMenu[1] = (Botao){
+        centroX, yBase + espacamento,
+        al_get_bitmap_width(btn_conquistas)* escala,
+        al_get_bitmap_height(btn_conquistas)* escala,
+        btn_conquistas,
+        MENU_CONQUISTAS
+    };
+
+        botoesMenu[2] = (Botao){
+        centroX, yBase + espacamento * 2,
+        al_get_bitmap_width(btn_sair)* escala,
+        al_get_bitmap_height(btn_sair)* escala,
+        btn_sair,
+        MENU_SAIR
+    };
 
     atribuirImagens(
     slots,
@@ -172,24 +220,65 @@ if (!timerSave) {
         queue,
         al_get_mouse_event_source()
     );
-
+    al_register_event_source(
+    queue,
+    al_get_keyboard_event_source()
+    );
     al_register_event_source(
         queue,
         al_get_display_event_source(display)
     );
-
+   
     al_register_event_source(
     queue,
     al_get_timer_event_source(timerSave)
     );
+    al_register_event_source(
+            queue,
+    al_get_timer_event_source(timerRender)
+    );
 
     al_start_timer(timerSave);
-
+    al_start_timer(timerRender);
     bool rodando = true;
+    bool precisa_desenhar = false;
 
     // LOOP
-    while (rodando) {
+   while (rodando) {
 
+    al_wait_for_event(queue, &event);
+
+    if (event.type == ALLEGRO_EVENT_KEY_DOWN) {
+
+    if (event.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
+
+        if (estado == ESTADO_JOGO) {
+            estado = ESTADO_MENU;
+        }
+        else if (estado == ESTADO_MENU) {
+            rodando = false; // opcional: ESC fecha o jogo no menu
+        }
+    }
+}
+if (precisa_desenhar && rodando) {
+    precisa_desenhar = false;
+
+    if (estado == ESTADO_MENU) {
+        al_clear_to_color(al_map_rgb(0, 0, 0));
+        al_draw_scaled_bitmap(
+            bg_menu,
+            0, 0,
+            al_get_bitmap_width(bg_menu),
+            al_get_bitmap_height(bg_menu),
+            0, 0,
+            jogo->larguraTela,
+            jogo->alturaTela,
+            0
+        );
+        desenharMenu(botoesMenu, 3);
+        al_flip_display();
+    }
+    else if (estado == ESTADO_JOGO) {
         desenhar(
             jogo,
             pc,
@@ -204,8 +293,8 @@ if (!timerSave) {
             largura_original,
             altura_original
         );
-
-        al_wait_for_event(queue, &event);
+    }
+}
 
         if (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
 
@@ -216,23 +305,49 @@ if (!timerSave) {
 
         if (event.type == ALLEGRO_EVENT_TIMER) {
 
+        if (event.timer.source == timerSave) {
             salvarJogo(jogo, slots);
-
             printf("Auto save!\n");
-}
+        }
 
-        if (event.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) {
+        if (event.timer.source == timerRender) {
+            precisa_desenhar = true;
+        }
+    }    
+       if (event.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) {
 
-            tratarClique(
-                jogo,
-                slots,
-                &historico,
-                multiplicador,
-                event.mouse.x,
-                event.mouse.y
-);
+    if (estado == ESTADO_MENU) {
+
+        OpcaoMenu op = tratarCliqueMenu(
+            botoesMenu, 3,
+            event.mouse.x,
+            event.mouse.y
+        );
+
+        if (op == MENU_JOGAR) {
+            estado = ESTADO_JOGO;
+        }
+        else if (op == MENU_CONQUISTAS) {
+            estado = ESTADO_CONQUISTAS;
+        }
+        else if (op == MENU_SAIR) {
+            rodando = false;
         }
     }
+
+    else if (estado == ESTADO_JOGO) {
+
+        tratarClique(
+            jogo,
+            slots,
+            &historico,
+            multiplicador,
+            event.mouse.x,
+            event.mouse.y
+        );
+        }
+    }
+}
 
     // LIMPEZA
     al_destroy_bitmap(pc);
@@ -246,6 +361,7 @@ if (!timerSave) {
 
     al_destroy_event_queue(queue);
     al_destroy_timer(timerSave);
+    al_destroy_timer(timerRender);
     al_destroy_display(display);
 
     free(jogo);
