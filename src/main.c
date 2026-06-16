@@ -142,22 +142,18 @@ if (!timerRender) {
     gpu_img = al_load_bitmap("../assets/images/upgrade_GPU.png");
     ram_img = al_load_bitmap("../assets/images/upgrade_RAM.png");
     ALLEGRO_BITMAP *bg_menu = al_load_bitmap("../assets/images/menu_inicial.png");
-
-    // BOTÕES DO MENU
-
-
-    Botao botoesMenu[3];
-
     ALLEGRO_BITMAP *btn_jogar = al_load_bitmap("../assets/images/jogar.png");
     ALLEGRO_BITMAP *btn_conquistas = al_load_bitmap("../assets/images/conquistas.png");
     ALLEGRO_BITMAP *btn_sair = al_load_bitmap("../assets/images/sair.png");
+    // BOTÕES DO MENU
+    Botao botoesMenu[3];
 
     // centralizar
-    float escala = 0.6;
+    float escala = 0.4;
     int larguraBotao = al_get_bitmap_width(btn_jogar)*escala;
     int centroX = jogo->larguraTela / 2 - (larguraBotao / 2);
-    int yBase = 370;
-    int espacamento = 80;
+    int yBase = 400;
+    int espacamento = 90;
 
         botoesMenu[0] = (Botao){
         centroX, yBase,
@@ -248,105 +244,107 @@ if (!timerRender) {
 
     al_wait_for_event(queue, &event);
 
+    // ── 1. TECLADO ──────────────────────────────────────────
     if (event.type == ALLEGRO_EVENT_KEY_DOWN) {
-
-    if (event.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
-
-        if (estado == ESTADO_JOGO) {
-            estado = ESTADO_MENU;
-        }
-        else if (estado == ESTADO_MENU) {
-            rodando = false; // opcional: ESC fecha o jogo no menu
+        if (event.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
+            if (estado == ESTADO_JOGO) {
+                estado = ESTADO_MENU;
+            } else if (estado == ESTADO_CONQUISTAS) {
+                estado = ESTADO_MENU;
+            }
         }
     }
-}
-if (precisa_desenhar && rodando) {
-    precisa_desenhar = false;
 
-    if (estado == ESTADO_MENU) {
-        al_clear_to_color(al_map_rgb(0, 0, 0));
-        al_draw_scaled_bitmap(
-            bg_menu,
-            0, 0,
-            al_get_bitmap_width(bg_menu),
-            al_get_bitmap_height(bg_menu),
-            0, 0,
-            jogo->larguraTela,
-            jogo->alturaTela,
-            0
-        );
-        desenharMenu(botoesMenu, 3);
-        al_flip_display();
+    // ── 2. FECHAR JANELA ────────────────────────────────────
+    if (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
+        salvarJogo(jogo, slots);
+        rodando = false;
     }
-    else if (estado == ESTADO_JOGO) {
-        desenhar(
-            jogo,
-            pc,
-            menu,
-            cpu_img,
-            gpu_img,
-            ram_img,
-            font,
-            slots,
-            &historico,
-            multiplicador,
-            largura_original,
-            altura_original
-        );
-    }
-}
 
-        if (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
-
-            salvarJogo(jogo, slots);
-
-            rodando = false;
-        }
-
-        if (event.type == ALLEGRO_EVENT_TIMER) {
-
+    // ── 3. TIMERS ───────────────────────────────────────────
+    if (event.type == ALLEGRO_EVENT_TIMER) {
         if (event.timer.source == timerSave) {
             salvarJogo(jogo, slots);
             printf("Auto save!\n");
         }
-
         if (event.timer.source == timerRender) {
             precisa_desenhar = true;
         }
-    }    
-       if (event.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) {
+    }
 
-    if (estado == ESTADO_MENU) {
-
-        OpcaoMenu op = tratarCliqueMenu(
-            botoesMenu, 3,
-            event.mouse.x,
-            event.mouse.y
-        );
-
-        if (op == MENU_JOGAR) {
-            estado = ESTADO_JOGO;
-        }
-        else if (op == MENU_CONQUISTAS) {
-            estado = ESTADO_CONQUISTAS;
-        }
-        else if (op == MENU_SAIR) {
-            rodando = false;
+    // ── 4. MOUSE ────────────────────────────────────────────
+    if (event.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) {
+        if (estado == ESTADO_MENU) {
+            OpcaoMenu op = tratarCliqueMenu(
+                botoesMenu, 3,
+                event.mouse.x,
+                event.mouse.y
+            );
+            if (op == MENU_JOGAR) {
+                estado = ESTADO_JOGO;
+            } else if (op == MENU_CONQUISTAS) {
+                estado = ESTADO_CONQUISTAS;
+            } else if (op == MENU_SAIR) {
+                salvarJogo(jogo, slots);
+                rodando = false;
+            }
+        } else if (estado == ESTADO_JOGO) {
+            tratarClique(
+                jogo, slots, &historico,
+                multiplicador,
+                event.mouse.x, event.mouse.y
+            );
         }
     }
 
-    else if (estado == ESTADO_JOGO) {
+    // ── 5. DESENHAR (SEMPRE POR ÚLTIMO) ─────────────────────
+    if (precisa_desenhar && rodando) {
+        precisa_desenhar = false;
 
-        tratarClique(
-            jogo,
-            slots,
-            &historico,
-            multiplicador,
-            event.mouse.x,
-            event.mouse.y
-        );
+        if (estado == ESTADO_MENU) {
+            al_clear_to_color(al_map_rgb(0, 0, 0));
+            al_draw_scaled_bitmap(
+                bg_menu,
+                0, 0,
+                al_get_bitmap_width(bg_menu),
+                al_get_bitmap_height(bg_menu),
+                0, 0,
+                jogo->larguraTela,
+                jogo->alturaTela,
+                0
+            );
+            desenharMenu(botoesMenu, 3);
+            al_flip_display();
+        } else if (estado == ESTADO_CONQUISTAS) {      
+                al_clear_to_color(al_map_rgb(0, 0, 0));     
+                al_draw_scaled_bitmap(                       
+                bg_menu,                                 
+                0, 0,                                    
+                al_get_bitmap_width(bg_menu),            
+                al_get_bitmap_height(bg_menu),           
+                0, 0,                                    
+                jogo->larguraTela,                       
+                jogo->alturaTela,                        
+                0                                        
+                );                                           
+                al_draw_text(font, al_map_rgb(255, 255, 255),
+                jogo->larguraTela / 2,                   
+                jogo->alturaTela / 2,                   
+                ALLEGRO_ALIGN_CENTRE,                    
+                "EM BREVE..."                            
+                );                                          
+                al_flip_display();  
+        } else if (estado == ESTADO_JOGO) {
+            desenhar(
+                jogo, pc, menu,
+                cpu_img, gpu_img, ram_img,
+                font, slots, &historico,
+                multiplicador,
+                largura_original, altura_original
+            );
         }
     }
+
 }
 
     // LIMPEZA
