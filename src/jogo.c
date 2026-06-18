@@ -15,6 +15,7 @@ void inicializarJogo(Jogo *jogo)
     jogo->img_h = 0;
 
     jogo->opcaoCompra = MULT_1X;
+    jogo->evolucaoPc = 0;
 }
 
 void atribuirImagens(

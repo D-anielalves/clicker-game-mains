@@ -17,6 +17,7 @@
 #include "clique.h"
 #include "render.h"
 #include "menu.h"
+#include "conquistas.h"
 
 #define NUM_SLOTS 3
 #define BOTAO_W 350
@@ -50,6 +51,12 @@ int main() {
     Pilha historico;
     inicializarPilha(&historico);
 
+    Conquista conquistas[NUM_CONQUISTAS];
+    inicializarConquistas(conquistas);
+
+    int conquistaParaMostrar = -1;
+    float tempoPopup = 0;
+
     if (!jogo)
         return -1;
 
@@ -80,7 +87,7 @@ int main() {
     slots[2].img = NULL;
 
     // LOAD SAVE
-    carregarJogo(jogo, slots);
+    carregarJogo(jogo, slots, conquistas);
 
     // MATRIZ
     int multiplicador[3][1] = {
@@ -145,6 +152,16 @@ if (!timerRender) {
     ALLEGRO_BITMAP *btn_jogar = al_load_bitmap("../assets/images/jogar.png");
     ALLEGRO_BITMAP *btn_conquistas = al_load_bitmap("../assets/images/conquistas.png");
     ALLEGRO_BITMAP *btn_sair = al_load_bitmap("../assets/images/sair.png");
+    ALLEGRO_BITMAP *pc_evoluido1 = al_load_bitmap("../assets/images/pccomum.png");
+    ALLEGRO_BITMAP *pc_evoluido2 = al_load_bitmap("../assets/images/pcgamer.png");
+    ALLEGRO_BITMAP *btn_evoluir = al_load_bitmap("../assets/images/evoluirpc.png");
+
+    ALLEGRO_BITMAP *conq_cpu50 = al_load_bitmap("../assets/images/cpu50.png");
+    ALLEGRO_BITMAP *conq_gpu50 = al_load_bitmap("../assets/images/gpu50.png");
+    ALLEGRO_BITMAP *conq_ram50 = al_load_bitmap("../assets/images/ram50.png");
+    ALLEGRO_BITMAP *conq_evolucao1 = al_load_bitmap("../assets/images/evolucao1.png");
+
+    carregarImagensConquistas(conquistas, conq_cpu50, conq_gpu50, conq_ram50, conq_evolucao1);
     // BOTÕES DO MENU
     Botao botoesMenu[3];
 
@@ -187,7 +204,9 @@ if (!timerRender) {
 );
 
     if (!pc || !menu ||
-        !cpu_img || !gpu_img || !ram_img) {
+        !cpu_img || !gpu_img || !ram_img ||
+        !pc_evoluido1 || !pc_evoluido2 || !btn_evoluir ||
+        !conq_cpu50 || !conq_gpu50 || !conq_ram50 || !conq_evolucao1) {
 
         printf("Erro imagens\n");
         return -1;
@@ -257,18 +276,26 @@ if (!timerRender) {
 
     // ── 2. FECHAR JANELA ────────────────────────────────────
     if (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
-        salvarJogo(jogo, slots);
+        salvarJogo(jogo, slots, conquistas);
         rodando = false;
     }
 
     // ── 3. TIMERS ───────────────────────────────────────────
     if (event.type == ALLEGRO_EVENT_TIMER) {
         if (event.timer.source == timerSave) {
-            salvarJogo(jogo, slots);
+            salvarJogo(jogo, slots, conquistas);
             printf("Auto save!\n");
         }
         if (event.timer.source == timerRender) {
             precisa_desenhar = true;
+
+            if (tempoPopup > 0) {
+                tempoPopup -= (1.0 / 60.0);
+                if (tempoPopup <= 0) {
+                    tempoPopup = 0;
+                    conquistaParaMostrar = -1;
+                }
+            }
         }
     }
 
@@ -285,15 +312,27 @@ if (!timerRender) {
             } else if (op == MENU_CONQUISTAS) {
                 estado = ESTADO_CONQUISTAS;
             } else if (op == MENU_SAIR) {
-                salvarJogo(jogo, slots);
+                salvarJogo(jogo, slots, conquistas);
                 rodando = false;
             }
         } else if (estado == ESTADO_JOGO) {
-            tratarClique(
-                jogo, slots, &historico,
-                multiplicador,
-                event.mouse.x, event.mouse.y
-            );
+            int novaConquista = -1;
+
+        tratarClique(
+            jogo,
+            slots,
+            &historico,
+            multiplicador,
+            conquistas,
+            &novaConquista,
+            event.mouse.x,
+            event.mouse.y
+        );
+
+        if (novaConquista >= 0) {
+            conquistaParaMostrar = novaConquista;
+            tempoPopup = 4.0; // segundos
+        }
         }
     }
 
@@ -335,14 +374,27 @@ if (!timerRender) {
                 );                                          
                 al_flip_display();  
         } else if (estado == ESTADO_JOGO) {
-            desenhar(
-                jogo, pc, menu,
-                cpu_img, gpu_img, ram_img,
-                font, slots, &historico,
-                multiplicador,
-                largura_original, altura_original
-            );
-        }
+        desenhar(
+            jogo,
+            pc,
+            pc_evoluido1,
+            pc_evoluido2,
+            menu,
+            cpu_img,
+            gpu_img,
+            ram_img,
+            btn_evoluir,
+            font,
+            slots,
+            &historico,
+            multiplicador,
+            largura_original,
+            altura_original,
+            conquistas,
+            conquistaParaMostrar,
+            tempoPopup
+        );
+    }
     }
 
 }

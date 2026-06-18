@@ -1,6 +1,7 @@
 #include "clique.h"
 #include "upgrades.h"
 #include "pilha.h"
+#include "conquistas.h"
 
 // =====================
 // CLIQUE
@@ -9,10 +10,11 @@ void tratarClique(Jogo *jogo,
                   Slot slots[],
                   Pilha *historico,
                   int multiplicador[3][1],
+                  Conquista conquistas[],
+                  int *conquistaDesbloqueada,
                   int x, int y) {
 
-    int mult = multiplicador[jogo->opcaoCompra][0];
-
+    int mult = multiplicador[jogo->opcaoCompra][0];               
     // CLICK PC
     int margem = jogo->img_w * 0.15;
 
@@ -26,7 +28,7 @@ void tratarClique(Jogo *jogo,
     }
 
     // UPGRADES
-    int painel_x = jogo->larguraTela - 400;
+    int painel_x = jogo->larguraTela - (BOTAO_W + 90);
     int start_y = 150;
 
     for (int i = 0; i < NUM_SLOTS; i++) {
@@ -64,6 +66,7 @@ void tratarClique(Jogo *jogo,
     }
 }
 
+            *conquistaDesbloqueada = verificarConquistas(jogo, slots, conquistas); 
             return;
         }
     }
@@ -83,6 +86,42 @@ void tratarClique(Jogo *jogo,
 
         if (jogo->opcaoCompra > MULT_10X)
             jogo->opcaoCompra = MULT_1X;
+
+        return;
     }
-}                  
+
+    // BOTÃO EVOLUIR PC
+    int nivelTotal = slots[0].nivel + slots[1].nivel + slots[2].nivel;
+
+    int botaoEvoluir_x = jogo->larguraTela - 400;
+    int botaoEvoluir_y = 560;
+    int botaoEvoluir_w = 300;
+    int botaoEvoluir_h = 110;
+
+    bool podeEvoluir1 = (jogo->evolucaoPc == 0 &&
+                         nivelTotal >= 10 &&
+                         jogo->pontos >= 8000);
+
+    bool podeEvoluir2 = (jogo->evolucaoPc == 1 &&
+                         nivelTotal >= 20 &&
+                         jogo->pontos >= 90000);
+
+    if ((podeEvoluir1 || podeEvoluir2) &&
+        x >= botaoEvoluir_x &&
+        x <= botaoEvoluir_x + botaoEvoluir_w &&
+        y >= botaoEvoluir_y &&
+        y <= botaoEvoluir_y + botaoEvoluir_h) {
+
+        if (podeEvoluir1) {
+            jogo->pontos -= 8000;
+            jogo->evolucaoPc = 1;
+        } else if (podeEvoluir2) {
+            jogo->pontos -= 90000;
+            jogo->evolucaoPc = 2;
+        }
+    }
+
+    // VERIFICAR CONQUISTAS
+    *conquistaDesbloqueada = verificarConquistas(jogo, slots, conquistas);
+}       
  

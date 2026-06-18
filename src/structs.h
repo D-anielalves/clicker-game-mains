@@ -3,6 +3,7 @@
 
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_font.h>
+#include <stdbool.h>
 
 #define NUM_SLOTS 3
 #define BOTAO_W 350
@@ -33,6 +34,8 @@ typedef struct {
 
     int img_w;
     int img_h;
+
+    int evolucaoPc;
 
     ModoCompra opcaoCompra;
 
@@ -83,6 +86,13 @@ typedef struct {
     ALLEGRO_BITMAP *imagem;
     OpcaoMenu acao;
 } Botao;
+
+typedef struct {
+    char nome[50];
+    char descricao[100];
+    ALLEGRO_BITMAP *img;
+    bool desbloqueada;
+} Conquista;
 
 typedef enum {
     ESTADO_MENU,

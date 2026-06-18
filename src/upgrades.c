@@ -14,7 +14,7 @@ int calcularCustoRecursivo(int custoBase, int nivel) {
     return(int)(calcularCustoRecursivo(
         custoBase,
         nivel - 1
-    ) * 1.6);
+    ) * 1.3);
 }
 
 // =====================
