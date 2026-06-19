@@ -60,12 +60,10 @@ void tratarClique(Jogo *jogo,
         pushCompra(
             historico,
             slots[i].up.nome
-);
-
-        ordenarUpgrades(slots);
+);        
     }
 }
-
+            ordenarUpgrades(slots);
             *conquistaDesbloqueada = verificarConquistas(jogo, slots, conquistas); 
             return;
         }

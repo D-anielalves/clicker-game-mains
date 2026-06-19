@@ -56,12 +56,10 @@ void ordenarUpgrades(Slot slots[]) {
 // MELHOR UPGRADE
 // =====================
 Slot* buscarMelhorUpgrade(Jogo *jogo, Slot slots[]) {
-
     Slot *melhor = NULL;
-
     for (int i = 0; i < NUM_SLOTS; i++) {
-
-        if (jogo->pontos >= slots[i].up.custo) {
+        int custoAtual = calcularCustoRecursivo(slots[i].up.custo, slots[i].nivel);
+        if (jogo->pontos >= custoAtual) {
 
             if (melhor == NULL ||
                 slots[i].up.bonus > melhor->up.bonus) {
@@ -70,6 +68,5 @@ Slot* buscarMelhorUpgrade(Jogo *jogo, Slot slots[]) {
             }
         }
     }
-
     return melhor;
 }
