@@ -47,10 +47,6 @@ void carregarImagensConquistas(Conquista conquistas[],
 // =====================
 int verificarConquistas(Jogo *jogo, Slot slots[], Conquista conquistas[]) {
  
-    // slots[0]=CPU, slots[1]=GPU, slots[2]=RAM (ordem de inicializacao em main.c)
-    // OBS: ordenarUpgrades() reordena o array por custo, entao usamos o nome
-    // para identificar cada slot em vez do indice fixo.
- 
     for (int i = 0; i < NUM_SLOTS; i++) {
         if (strcmp(slots[i].up.nome, "CPU") == 0 &&
             slots[i].nivel >= 50 &&

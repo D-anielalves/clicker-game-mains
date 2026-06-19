@@ -3,10 +3,8 @@
 
 #include "structs.h"
 
-// Inicializa os dados do jogo
 void inicializarJogo(Jogo *jogo);
 
-// Associa as imagens aos slots
 void atribuirImagens(
     Slot slots[],
     ALLEGRO_BITMAP *cpu_img,
