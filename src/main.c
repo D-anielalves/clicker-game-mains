@@ -56,6 +56,7 @@ int main() {
 
     int conquistaParaMostrar = -1;
     float tempoPopup = 0;
+    int conquistaEmZoom = -1;
 
     if (!jogo)
         return -1;
@@ -269,7 +270,11 @@ if (!timerRender) {
             if (estado == ESTADO_JOGO) {
                 estado = ESTADO_MENU;
             } else if (estado == ESTADO_CONQUISTAS) {
-                estado = ESTADO_MENU;
+                if (conquistaEmZoom >= 0) {
+                    conquistaEmZoom = -1;
+                } else {
+                    estado = ESTADO_MENU;
+                }
             }
         }
     }
@@ -315,9 +320,22 @@ if (!timerRender) {
                 salvarJogo(jogo, slots, conquistas);
                 rodando = false;
             }
+        } else if (estado == ESTADO_CONQUISTAS) {
+
+            if (conquistaEmZoom >= 0) {
+                // QUALQUER CLIQUE FECHA O ZOOM
+                conquistaEmZoom = -1;
+            } else {
+                int clicado = tratarCliqueConquistas(
+                    jogo, conquistas,
+                    event.mouse.x, event.mouse.y
+                );
+                if (clicado >= 0) {
+                    conquistaEmZoom = clicado;
+                }
+            }
         } else if (estado == ESTADO_JOGO) {
             int novaConquista = -1;
-
         tratarClique(
             jogo,
             slots,
@@ -354,25 +372,11 @@ if (!timerRender) {
             );
             desenharMenu(botoesMenu, 3);
             al_flip_display();
-        } else if (estado == ESTADO_CONQUISTAS) {      
-                al_clear_to_color(al_map_rgb(0, 0, 0));     
-                al_draw_scaled_bitmap(                       
-                bg_menu,                                 
-                0, 0,                                    
-                al_get_bitmap_width(bg_menu),            
-                al_get_bitmap_height(bg_menu),           
-                0, 0,                                    
-                jogo->larguraTela,                       
-                jogo->alturaTela,                        
-                0                                        
-                );                                           
-                al_draw_text(font, al_map_rgb(255, 255, 255),
-                jogo->larguraTela / 2,                   
-                jogo->alturaTela / 2,                   
-                ALLEGRO_ALIGN_CENTRE,                    
-                "EM BREVE..."                            
-                );                                          
-                al_flip_display();  
+        } else if (estado == ESTADO_CONQUISTAS) {
+            desenharConquistas(jogo, font, conquistas);
+            if (conquistaEmZoom >= 0) {
+                desenharZoomConquista(jogo, font, conquistas, conquistaEmZoom);
+            }  
         } else if (estado == ESTADO_JOGO) {
         desenhar(
             jogo,

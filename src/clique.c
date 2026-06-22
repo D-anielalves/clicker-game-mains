@@ -121,5 +121,38 @@ void tratarClique(Jogo *jogo,
 
     // VERIFICAR CONQUISTAS
     *conquistaDesbloqueada = verificarConquistas(jogo, slots, conquistas);
+}
+// =====================
+// CLIQUE NA TELA DE CONQUISTAS
+// Retorna o indice do card clicado (se desbloqueado), ou -1
+// =====================
+int tratarCliqueConquistas(Jogo *jogo, Conquista conquistas[], int x, int y) {
+
+    int painel_x = 60;
+    int painel_y = 30;
+    int painel_w = jogo->larguraTela - 120;
+
+    int faixa_h = 70;
+    int card_x = painel_x + 30;
+    int card_w = painel_w - 60;
+    int card_h = 95;
+    int espacamento = 16;
+    int start_y = painel_y + faixa_h + 20;
+
+    for (int i = 0; i < NUM_CONQUISTAS; i++) {
+
+        int card_y = start_y + i * (card_h + espacamento);
+
+        if (x >= card_x && x <= card_x + card_w &&
+            y >= card_y && y <= card_y + card_h) {
+
+            if (conquistas[i].desbloqueada) {
+                return i;
+            }
+            return -1;
+        }
+    }
+
+    return -1;
 }       
  

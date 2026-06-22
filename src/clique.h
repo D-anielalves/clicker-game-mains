@@ -14,5 +14,11 @@ void tratarClique(
     int x,
     int y
 );
+int tratarCliqueConquistas(
+    Jogo *jogo,
+    Conquista conquistas[],
+    int x,
+    int y
+);
 
 #endif

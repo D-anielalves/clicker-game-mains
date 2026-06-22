@@ -28,4 +28,15 @@ void desenhar(
     float tempoPopup
 );
 
+void desenharConquistas(
+    Jogo *jogo,
+    ALLEGRO_FONT *font,
+    Conquista conquistas[]
+);
+void desenharZoomConquista(
+    Jogo *jogo,
+    ALLEGRO_FONT *font,
+    Conquista conquistas[],
+    int indice
+);
 #endif
